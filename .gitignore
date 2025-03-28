@@ -1,0 +1,9 @@
+# Ignore virtual environments
+.env
+__pycache__/
+.venv
+
+
+# Ignore build files
+dist/
+build/
