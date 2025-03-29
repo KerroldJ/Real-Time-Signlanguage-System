@@ -115,7 +115,7 @@ export const useVoiceToImage = (stream: MediaStream | null, isOnCall: boolean, i
     }, [stream, isOnCall, isMicOn, isListening]);
 
     const fetchImageFromServer = (newPhrase: string) => {
-        const imageUrl = `http://127.0.0.1:5001/images/${encodeURIComponent(newPhrase)}.png`;
+        const imageUrl = `http://192.168.8.100:5001/images/${encodeURIComponent(newPhrase)}.png`;
         console.log('Setting image URL:', imageUrl);
         setImageUrl(imageUrl);
     };

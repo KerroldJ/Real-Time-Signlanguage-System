@@ -60,7 +60,7 @@ export const useHandTracking = (
                     formData.append('features', JSON.stringify(lastKeyFrameFeatures));
                     console.log('Sending features to backend:', lastKeyFrameFeatures);
                     axios
-                        .post('http://127.0.0.1:5001/predict', formData, {
+                        .post('http://192.168.8.100:5001/predict', formData, {
                             headers: { 'Content-Type': 'multipart/form-data' },
                         })
                         .then((response) => {
