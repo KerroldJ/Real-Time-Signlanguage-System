@@ -1,4 +1,4 @@
-import { OngoingCall, Participants, PeerData, SocketUser, OngoingChat, Message } from "@/types";
+import { OngoingCall, Participants, PeerData, SocketUser } from "@/types";
 import { useUser } from "@clerk/nextjs";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { createContext } from "react";
@@ -176,9 +176,8 @@ export const SocketContextProvider = (props: Props) => {
 
     const handleCall = useCallback(async (user: SocketUser) => {
         setIsCallEnded(false)
-        if (!currentSocketUser) return
+        if (!currentSocketUser) return;
         if (ongoingCall) return alert('Already in another call')
-
         const stream = await getMediaStream();
 
         if (!stream) {

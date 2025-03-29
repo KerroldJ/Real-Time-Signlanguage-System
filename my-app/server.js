@@ -16,7 +16,12 @@ export let io;
 app.prepare().then(() => {
   const httpServer = createServer(handler);
 
-  io = new Server(httpServer);
+  io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
 
   let onlineUsers = [];
 

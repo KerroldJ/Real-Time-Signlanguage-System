@@ -17,17 +17,6 @@ export type Participants = {
   receiver: SocketUser;
 };
 
-export type Message = {
-  sender: SocketUser;
-  receiver: SocketUser;
-  content: string;
-  timestamp: number;
-};
-
-export type OngoingChat = {
-  participants: Participants;
-  messages: Message[];
-};
 
 export type PeerData = {
   peerConnection: Peer.Instance;
