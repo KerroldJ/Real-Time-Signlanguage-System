@@ -11,8 +11,8 @@ const VideoCall = () => {
     const [isMicOn, setIsMicOn] = useState(true);
     const [isVidOn, setIsVidOn] = useState(true);
     const [prediction, setPrediction] = useState<string | null>(null);
+    const [showPrediction, setShowPrediction] = useState(false);
     const isOnCall = localStream && peer && ongoingCall ? true : false;
-
 
     if (isCallEnded) {
         return <div className="mt-5 text-rose-500">Call Ended</div>;
@@ -34,6 +34,10 @@ const VideoCall = () => {
             audioTrack.enabled = !audioTrack.enabled;
             setIsMicOn(audioTrack.enabled);
         }
+    };
+
+    const togglePredictionDisplay = () => {
+        setShowPrediction(!showPrediction);
     };
 
     return (
@@ -65,6 +69,12 @@ const VideoCall = () => {
                             End Call
                         </button>
                         <button onClick={toggleCamera}> {!isVidOn ? <MdVideocam size={28} /> : <MdVideocamOff size={28} />}</button>
+                        <button
+                            className="px-4 py-2 bg-blue-500 text-white rounded mx-4"
+                            onClick={togglePredictionDisplay}
+                        >
+                            {showPrediction ? 'Hide SLT Model' : 'Use SLT Model'}
+                        </button>
                     </div>
                 </div>
 
@@ -74,16 +84,12 @@ const VideoCall = () => {
                         AI Assistant
                     </div>
                     <div className="flex-1 flex flex-col gap-2 px-4 py-2 overflow-y-auto bg-white">
-                        <PredictionDisplay prediction={prediction} />
-                    </div>         
-                        <div className="p-2 border-t border-slate-300 flex gap-2">
-                            <input
-                            type="text"
-                            placeholder="Type a message..."
-                            className="flex-1 p-2 border rounded-md"
-                            />
-                            <button className="bg-blue-500 text-white px-3 py-2 rounded-md">Send</button>
-                        </div>
+                        {showPrediction && <PredictionDisplay prediction={prediction} />}
+                    </div>
+                    <div className="p-2 border-t border-slate-300 flex gap-2">
+                        <input type="text" placeholder="Type a message..." className="flex-1 p-2 border rounded-md" />
+                        <button className="bg-blue-500 text-white px-3 py-2 rounded-md">Send</button>
+                    </div>
                 </div>
             </div>
         </>
