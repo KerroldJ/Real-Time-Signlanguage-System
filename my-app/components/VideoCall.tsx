@@ -75,8 +75,21 @@ const VideoCall = () => {
                     </div>
                 </div>
 
-                <div className="mr-10 ml-10 flex flex-col items-center border-4 border-slate-400 w-[350px] rounded-lg py-4">
-                    <PredictionDisplay prediction={prediction} />
+                <div className="mr-10 ml-10 flex flex-col border-4 border-slate-400 w-[350px] h-[500px] rounded-lg overflow-hidden">
+                    <div className="bg-slate-400 text-white font-semibold text-center py-2">
+                        AI Assistant
+                    </div>
+                    <div className="flex-1 flex flex-col gap-2 px-4 py-2 overflow-y-auto bg-white">
+                        <PredictionDisplay prediction={prediction} />
+                    </div>
+                        <div className="p-2 border-t border-slate-300 flex gap-2">
+                            <input
+                            type="text"
+                            placeholder="Type a message..."
+                            className="flex-1 p-2 border rounded-md"
+                            />
+                            <button className="bg-blue-500 text-white px-3 py-2 rounded-md">Send</button>
+                        </div>
                 </div>
             </div>
         </>
