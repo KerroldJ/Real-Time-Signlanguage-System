@@ -4,14 +4,16 @@ import { Server } from "socket.io";
 import onCall from "./socket-events/onCall.js";
 import onWebrtcSignal from "./socket-events/onWebrtcSignal.js";
 import onHangup from "./socket-events/onHangup.js";
+import onMessage from "./socket-events/onMessage.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
 export let io;
+export let onlineUsers = []; 
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
@@ -22,8 +24,6 @@ app.prepare().then(() => {
       methods: ["GET", "POST"]
     }
   });
-
-  let onlineUsers = [];
 
   io.on("connection", (socket) => {
     socket.on("addNewUser", (clerkUser) => {
@@ -46,6 +46,7 @@ app.prepare().then(() => {
     socket.on("call", onCall);
     socket.on("webrtcSignal", onWebrtcSignal);
     socket.on("hangup", onHangup);
+    socket.on("message", onMessage);
   });
 
   httpServer
@@ -54,6 +55,6 @@ app.prepare().then(() => {
       process.exit(1);
     })
     .listen(port, () => {
-      console.log(`> Ready on http://${hostname}:${port}`);
+      console.log(`--> Ready on http://${hostname}:${port}`);
     });
 });

@@ -6,6 +6,7 @@
   "scripts": {
     "next-dev": "next dev",
     "dev": "node server.js",
+    "start": "next start",
     "nodemon": "nodemon server.js",
     "build": "next build",
     "lint": "next lint"
