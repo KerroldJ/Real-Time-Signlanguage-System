@@ -30,7 +30,6 @@ const VideoContainer: React.FC<VideoContainerProps> = ({
 
     useEffect(() => {
         if (isOnCall && prediction && onPrediction) {
-            console.log("✅ Calling onPrediction with:", prediction);
             onPrediction(prediction);
         }
     }, [prediction, isOnCall, onPrediction]);
