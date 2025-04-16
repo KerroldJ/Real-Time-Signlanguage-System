@@ -6,7 +6,7 @@ import onWebrtcSignal from "./socket-events/onWebrtcSignal.js";
 import onHangup from "./socket-events/onHangup.js";
 import onMessage from "./socket-events/onMessage.js";
 
-const dev = process.env.NODE_ENV !== "production";
+const dev = process.env.NODE_ENV !== "development";
 const hostname = "localhost";
 const port = process.env.PORT || 4000;
 const app = next({ dev, hostname, port });
