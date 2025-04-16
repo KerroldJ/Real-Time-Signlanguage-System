@@ -27,11 +27,12 @@ const VideoCall = () => {
     const chatRef = useRef<HTMLDivElement>(null);
     const isOnCall = localStream && peer && ongoingCall ? true : false;
 
+    // Handle socket message errors
     useEffect(() => {
         if (!socket) return;
 
         const handleMessageError = (error: { error: string }) => {
-            alert(`Error: ${error.error}`); 
+            alert(`Error: ${error.error}`);
         };
 
         socket.on("messageErrorToUI", handleMessageError);
@@ -40,11 +41,25 @@ const VideoCall = () => {
         };
     }, [socket]);
 
+    // Auto-scroll chat to bottom
     useEffect(() => {
         if (chatRef.current) {
             chatRef.current.scrollTop = chatRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Automatically send prediction as a message
+    useEffect(() => {
+        if (showPrediction && prediction && ongoingCall && user?.id) {
+            const senderMessage = {
+                senderId: user.id,
+                message: prediction,
+                timestamp: new Date().toISOString(),
+            };
+            socket?.emit("addSenderMessage", senderMessage);
+            sendMessage(prediction);
+        }
+    }, [showPrediction, prediction, socket, sendMessage, ongoingCall, user?.id]);
 
     if (isCallEnded) {
         return <div className="mt-5 text-rose-500">Call Ended</div>;
@@ -150,12 +165,11 @@ const VideoCall = () => {
                     <div className="bg-slate-400 text-white font-semibold text-center py-2">
                         AI Assistant
                     </div>
-                    
+
                     <div ref={chatRef} className="flex-1 flex flex-col gap-2 px-4 py-2 overflow-y-auto bg-white">
                         {showPrediction && <PredictionDisplay prediction={prediction} />}
                         {messages.map((msg, idx) => (
-                            <div key={`${msg.senderId}-${msg.timestamp}-${idx}`} className={`p-2 rounded-md max-w-[80%] ${msg.senderId === user?.id ? 'bg-blue-200 self-end text-blue-900' : 'bg-gray-200 self-start text-gray-900' }`} >
-                                
+                            <div key={`${msg.senderId}-${msg.timestamp}-${idx}`} className={`p-2 rounded-md max-w-[80%] ${msg.senderId === user?.id ? 'bg-blue-200 self-end text-blue-900' : 'bg-gray-200 self-start text-gray-900'}`} >
                                 <div className="text-gray-600">
                                     <h1 className="text-lg font-medium">{msg.message}</h1>
                                 </div>
