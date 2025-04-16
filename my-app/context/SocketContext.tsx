@@ -1,9 +1,16 @@
-import { OngoingCall, Participants, PeerData, SocketUser, MessageData, ReceivedMessage, MessageError } from "@/types";
+'use client';
+
+import { OngoingCall, SocketUser, ReceivedMessage, MessageError } from "@/types";
 import { useUser } from "@clerk/nextjs";
-import { useCallback, useContext, useEffect, useState } from "react";
-import { createContext } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Socket, io } from "socket.io-client";
 import Peer, { SignalData } from "simple-peer";
+
+interface PeerData {
+    peerConnection: Peer.Instance;
+    participantUser: SocketUser;
+    stream?: MediaStream;
+}
 
 interface Props {
     [propName: string]: any;
@@ -19,8 +26,8 @@ interface iSocketContext {
     handleCall: (user: SocketUser) => void;
     handleJoinCall: (ongoingCall: OngoingCall) => void;
     handleHangup: (data: { ongoingCall?: OngoingCall; callEnded?: boolean }) => void;
-    sendMessage: (message: string) => void; // Added
-    messages: ReceivedMessage[]; // Added
+    sendMessage: (message: string) => void;
+    messages: ReceivedMessage[];
 }
 
 export const SocketContext = createContext<iSocketContext | null>(null);
@@ -34,7 +41,7 @@ export const SocketContextProvider = (props: Props) => {
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [peer, setPeer] = useState<PeerData | null>(null);
     const [isCallEnded, setIsCallEnded] = useState(false);
-    const [messages, setMessages] = useState<ReceivedMessage[]>([]); // Added
+    const [messages, setMessages] = useState<ReceivedMessage[]>([]);
 
     const currentSocketUser = onlineUsers?.find((onlineUser) => onlineUser.userId === user?.id);
 
@@ -69,7 +76,7 @@ export const SocketContextProvider = (props: Props) => {
     );
 
     const onIncomingCall = useCallback(
-        (participants: Participants) => {
+        (participants: any) => {
             if (ongoingCall && socket && user) {
                 socket.emit("hangup", {
                     ongoingCall: {
@@ -93,9 +100,10 @@ export const SocketContextProvider = (props: Props) => {
         setPeer((prevPeer) => {
             if (prevPeer) {
                 return { ...prevPeer, stream };
-            } else return prevPeer;
+            }
+            return prevPeer; // null
         });
-    }, [setPeer]);
+    }, []);
 
     const createPeer = useCallback(
         (stream: MediaStream, initiator: boolean, participantUser: SocketUser) => {
@@ -118,7 +126,7 @@ export const SocketContextProvider = (props: Props) => {
             });
 
             peer.on("stream", (stream: MediaStream) => addStreamToPeer(stream));
-            peer.on("error", console.error);
+            peer.on("error", (err) => console.error("Peer error:", err));
             peer.on("close", () => handleHangup({ callEnded: true }));
 
             const rtcPeerConnection: RTCPeerConnection = (peer as any)._pc;
@@ -134,7 +142,7 @@ export const SocketContextProvider = (props: Props) => {
 
             return peer;
         },
-        [ongoingCall]
+        [ongoingCall, addStreamToPeer]
     );
 
     const completePeerConnection = useCallback(
@@ -145,11 +153,11 @@ export const SocketContextProvider = (props: Props) => {
             }
 
             if (peer) {
-                peer.peerConnection?.signal(connectionData.sdp);
+                peer.peerConnection.signal(connectionData.sdp);
                 return;
             }
 
-            let participantUser;
+            let participantUser: SocketUser;
 
             if (connectionData.isCaller) {
                 participantUser = connectionData.ongoingCall.participants.caller;
@@ -176,7 +184,7 @@ export const SocketContextProvider = (props: Props) => {
                 }
             });
         },
-        [localStream, createPeer, peer, ongoingCall]
+        [localStream, createPeer, peer, socket]
     );
 
     const handleCall = useCallback(
@@ -197,7 +205,7 @@ export const SocketContextProvider = (props: Props) => {
             });
             socket?.emit("call", participants);
         },
-        [socket, currentSocketUser, ongoingCall]
+        [socket, currentSocketUser, ongoingCall, getMediaStream]
     );
 
     const handleJoinCall = useCallback(
@@ -231,7 +239,7 @@ export const SocketContextProvider = (props: Props) => {
                 }
             });
         },
-        [socket, currentSocketUser]
+        [socket, currentSocketUser, getMediaStream, createPeer]
     );
 
     const handleHangup = useCallback(
@@ -244,7 +252,7 @@ export const SocketContextProvider = (props: Props) => {
             }
             setOngoingCall(null);
             setPeer(null);
-            setMessages([]); // Clear messages on hangup
+            setMessages([]);
             if (localStream) {
                 localStream.getTracks().forEach((track) => track.stop());
                 setLocalStream(null);
@@ -256,42 +264,59 @@ export const SocketContextProvider = (props: Props) => {
 
     const sendMessage = useCallback(
         (message: string) => {
-            if (!socket || !user || !ongoingCall) {
-                console.error("Cannot send message: missing socket, user, or ongoing call");
+            if (!socket || !user || !ongoingCall || !ongoingCall.participants) {
+                console.error("Cannot send message: missing required data", {
+                    socket: !!socket,
+                    user: !!user,
+                    ongoingCall: !!ongoingCall,
+                    participants: !!ongoingCall?.participants,
+                });
                 return;
             }
-            socket.emit("message", {
+            if (!message.trim()) {
+                console.warn("Empty message not sent");
+                return;
+            }
+            const senderMessage: ReceivedMessage = {
                 senderId: user.id,
-                message,
-                ongoingCall,
+                message: message.trim(),
+                timestamp: new Date().toISOString(),
+            };
+            setMessages((prev) => {
+                if (prev.some((m) => m.message === senderMessage.message && m.senderId === senderMessage.senderId && m.timestamp === senderMessage.timestamp)) {
+                    return prev;
+                }
+                return [...prev, senderMessage];
             });
+            console.log("Added sender message locally:", senderMessage);
+
+            const messageData = {
+                senderId: user.id,
+                message: message.trim(),
+                ongoingCall,
+            };
+            console.log("Sending message to server:", messageData);
+            socket.emit("message", messageData);
         },
         [socket, user, ongoingCall]
     );
 
     // Initialize socket
     useEffect(() => {
-        const newSocket = io("http://localhost:4000"); // Update if server URL differs
+        const newSocket = io("http://localhost:4000");
         setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
         };
-    }, [user]);
+    }, []);
 
     useEffect(() => {
-        if (socket === null) return;
-        if (socket.connected) {
-            onConnect();
-        }
-        function onConnect() {
-            if (socket) {
-                setIsConnected(true);
-            }
-        }
-        function onDisconnect() {
-            setIsConnected(false);
-        }
+        if (!socket) return;
+
+        const onConnect = () => setIsConnected(true);
+        const onDisconnect = () => setIsConnected(false);
+
         socket.on("connect", onConnect);
         socket.on("disconnect", onDisconnect);
 
@@ -303,11 +328,11 @@ export const SocketContextProvider = (props: Props) => {
 
     // Set online users
     useEffect(() => {
-        if (!socket || !isConnected) return;
+        if (!socket || !isConnected || !user) return;
 
         socket.emit("addNewUser", user);
-        socket.on("getUsers", (res) => {
-            setOnlineUsers(res);
+        socket.on("getUsers", (users: SocketUser[]) => {
+            setOnlineUsers(users);
         });
 
         return () => {
@@ -315,7 +340,7 @@ export const SocketContextProvider = (props: Props) => {
         };
     }, [socket, isConnected, user]);
 
-    // Calls and messages
+    // Messaging and call events
     useEffect(() => {
         if (!socket || !isConnected) return;
 
@@ -323,11 +348,18 @@ export const SocketContextProvider = (props: Props) => {
         socket.on("webrtcSignal", completePeerConnection);
         socket.on("hangup", () => handleHangup({ callEnded: true }));
         socket.on("receiveMessage", (message: ReceivedMessage) => {
-            setMessages((prev) => [...prev, message]);
+            console.log("Received message:", message);
+            setMessages((prev) => {
+                if (prev.some((m) => m.message === message.message && m.senderId === message.senderId && m.timestamp === message.timestamp)) {
+                    return prev;
+                }
+                return [...prev, message];
+            });
         });
+
         socket.on("messageError", (error: MessageError) => {
             console.error("Message error:", error.error);
-            // Optionally show toast
+            socket.emit("messageErrorToUI", error);
         });
 
         return () => {
@@ -337,16 +369,13 @@ export const SocketContextProvider = (props: Props) => {
             socket.off("receiveMessage");
             socket.off("messageError");
         };
-    }, [socket, isConnected, user, onIncomingCall, completePeerConnection, handleHangup]);
+    }, [socket, isConnected, onIncomingCall, completePeerConnection, handleHangup]);
 
     useEffect(() => {
-        let timeout: ReturnType<typeof setTimeout>;
+        let timeout: NodeJS.Timeout;
         if (isCallEnded) {
-            timeout = setTimeout(() => {
-                setIsCallEnded(false);
-            }, 2000);
+            timeout = setTimeout(() => setIsCallEnded(false), 2000);
         }
-
         return () => clearTimeout(timeout);
     }, [isCallEnded]);
 
@@ -372,10 +401,8 @@ export const SocketContextProvider = (props: Props) => {
 
 export const useSocket = () => {
     const context = useContext(SocketContext);
-
-    if (context === null) {
-        throw new Error("useSocket must be used within a SocketContextProvider"); // Fixed typo
+    if (!context) {
+        throw new Error("useSocket must be used within a SocketContextProvider");
     }
-
     return context;
 };

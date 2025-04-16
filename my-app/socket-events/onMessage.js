@@ -1,10 +1,7 @@
-// socket-events/onMessage.js
 import { io, onlineUsers } from "../server.js";
 
 const onMessage = (data) => {
     const { senderId, message, ongoingCall } = data;
-
-    // Validate sender
     const sender = onlineUsers.find((user) => user.userId === senderId);
     if (!sender) {
         io.to(sender.socketId).emit("messageError", {
@@ -13,7 +10,6 @@ const onMessage = (data) => {
         return;
     }
 
-    // Validate ongoingCall and participants
     if (!ongoingCall || !ongoingCall.participants) {
         io.to(sender.socketId).emit("messageError", {
             error: "No active call",
@@ -29,7 +25,6 @@ const onMessage = (data) => {
         return;
     }
 
-    // Determine recipient
     const recipient = senderId === caller.userId ? receiver : caller;
     const recipientOnline = onlineUsers.find((user) => user.userId === recipient.userId);
 
@@ -40,7 +35,6 @@ const onMessage = (data) => {
         return;
     }
 
-    // Send message to recipient
     io.to(recipientOnline.socketId).emit("receiveMessage", {
         senderId,
         message,
