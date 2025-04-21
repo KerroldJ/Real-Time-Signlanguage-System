@@ -301,15 +301,15 @@ export const SocketContextProvider = (props: Props) => {
         [socket, user, ongoingCall]
     );
 
-    // Initialize socket
+    // initialize socket
     useEffect(() => {
-        const newSocket = io("http://localhost:4000");
+        const newSocket = io();
         setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
         };
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (!socket) return;

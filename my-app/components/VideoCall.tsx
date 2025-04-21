@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import ChatBox from './ChatBox';
 import { Socket } from 'socket.io-client';
+import useVoiceToText from "./hook/useVoicetoText";
 
 
 interface Peer {
@@ -49,6 +50,9 @@ const VideoCall = () => {
     const [messageInput, setMessageInput] = useState<string>("");
     const isOnCall: boolean = localStream && peer && ongoingCall ? true : false;
 
+    // Integrate voice-to-text hook
+    const { transcribedText, isListening, setIsListening } = useVoiceToText(localStream, isOnCall, isMicOn);
+
     useEffect(() => {
         if (!socket) return;
 
@@ -73,6 +77,19 @@ const VideoCall = () => {
             sendMessage(prediction);
         }
     }, [showPrediction, prediction, socket, sendMessage, ongoingCall, user?.id]);
+
+    // Send transcribed text to chat when available
+    useEffect(() => {
+        if (transcribedText && ongoingCall && user?.id && isListening) {
+            const senderMessage: SenderMessage = {
+                senderId: user.id,
+                message: transcribedText,
+                timestamp: new Date().toISOString(),
+            };
+            socket?.emit("addSenderMessage", senderMessage);
+            sendMessage(transcribedText);
+        }
+    }, [transcribedText, socket, sendMessage, ongoingCall, user?.id, isListening]);
 
     if (isCallEnded) {
         return <div className="mt-5 text-rose-500">Call Ended</div>;
@@ -132,7 +149,7 @@ const VideoCall = () => {
         <>
             <div className="mt-8 flex flex-row justify-between">
                 <div className="ml-10 flex flex-col items-center">
-                    <div className="relative">
+                    <div className="relative max-w-[800px] mx-auto">
                         {localStream && (
                             <VideoContainer
                                 stream={localStream}
@@ -170,7 +187,25 @@ const VideoCall = () => {
                         >
                             {showPrediction ? 'Hide SLT Model' : 'Use SLT Model'}
                         </button>
+                        {isOnCall && (
+                            <button
+                                onClick={() => {
+                                    setIsListening(!isListening);
+                                    console.log('Listening toggled:', !isListening);
+                                }}
+                                className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                                {isListening ? 'Stop Listening' : 'Say a Word'}
+                            </button>
+                        )}
                     </div>
+
+                    {/* Display transcribed text */}
+                    {transcribedText && isListening && (
+                        <div className="mt-4 text-gray-800">
+                            Transcribed Text: {transcribedText}
+                        </div>
+                    )}
                 </div>
 
                 <ChatBox
