@@ -13,7 +13,7 @@ const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
 export let io;
-export let onlineUsers = []; 
+export let onlineUsers = [];
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
