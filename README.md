@@ -17,7 +17,7 @@ A Realtime Sign Language Translation System that enables two-way communication b
 
 | Frontend | Backend | ML/AI Model | Others |
 |----------|---------|-------------|--------|
-| Next.js | Flask   | TensorFlow / PyTorch (pretrained) | MediaPipe Hands, Socket.IO |
+| Next.js | Flask   | TensorFlow / PyTorch (pretrained) | MediaPipe Hands, Socket.IO, Clerk |
 
 
 ## ⚙️ Installation
