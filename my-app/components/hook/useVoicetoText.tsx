@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
+// Speech Recognition interfaces
 interface SpeechRecognition extends EventTarget {
     continuous: boolean;
     interimResults: boolean;
@@ -16,21 +17,41 @@ interface SpeechRecognition extends EventTarget {
 
 interface SpeechRecognitionEvent {
     results: SpeechRecognitionResultList;
+    resultIndex: number;
+}
+
+interface SpeechRecognitionResultList {
+    [index: number]: SpeechRecognitionResult;
+    length: number;
+}
+
+interface SpeechRecognitionResult {
+    [index: number]: SpeechRecognitionAlternative;
+    length: number;
+    isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+    transcript: string;
+    confidence: number;
 }
 
 interface SpeechRecognitionErrorEvent extends Event {
     error: string;
+    message: string;
 }
 
+// Declare global types for SpeechRecognition
 declare global {
     interface Window {
-        SpeechRecognition: { new(): SpeechRecognition };
-        webkitSpeechRecognition: { new(): SpeechRecognition };
+        SpeechRecognition: new () => SpeechRecognition;
+        webkitSpeechRecognition: new () => SpeechRecognition;
     }
 }
 
-export const useVoiceToImage = (stream: MediaStream | null, isOnCall: boolean, isMicOn: boolean) => {
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
+// Custom hook for voice-to-text
+const useVoiceToText = (stream: MediaStream | null, isOnCall: boolean, isMicOn: boolean) => {
+    const [transcribedText, setTranscribedText] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
     const isListeningRef = useRef(isListening);
     const combinedWords = useRef<string[]>([]);
@@ -38,15 +59,15 @@ export const useVoiceToImage = (stream: MediaStream | null, isOnCall: boolean, i
     useEffect(() => {
         isListeningRef.current = isListening;
         if (!stream || !isOnCall || !isMicOn || !isListening) return;
-        
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        
+
         if (!SpeechRecognition) {
             console.error('Speech Recognition API not supported in this browser');
             return;
         }
         const recognition = new SpeechRecognition();
-       
+
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
@@ -66,19 +87,19 @@ export const useVoiceToImage = (stream: MediaStream | null, isOnCall: boolean, i
             const result = event.results[event.results.length - 1];
             const transcript = result[0].transcript.trim().toLowerCase();
             const words = transcript.split(' ').filter(word => word.length > 0);
-            
+
             if (words.length === 0) return;
             if (transcript.includes('add the word')) {
-                const lastWord = words[words.length - 2]; 
+                const lastWord = words[words.length - 2];
                 if (lastWord) {
                     combinedWords.current.push(lastWord);
-                    fetchImageFromServer(combinedWords.current.join(' '));
+                    setTranscribedText(combinedWords.current.join(' '));
                 }
             } else {
                 const currentWord = words[words.length - 1];
                 if (currentWord) {
                     combinedWords.current = [currentWord];
-                    fetchImageFromServer(currentWord);
+                    setTranscribedText(currentWord);
                 }
             }
         };
@@ -114,11 +135,7 @@ export const useVoiceToImage = (stream: MediaStream | null, isOnCall: boolean, i
         };
     }, [stream, isOnCall, isMicOn, isListening]);
 
-    const fetchImageFromServer = (newPhrase: string) => {
-        const imageUrl = `http://192.168.8.100:5001/images/${encodeURIComponent(newPhrase)}.png`;
-        console.log('Setting image URL:', imageUrl);
-        setImageUrl(imageUrl);
-    };
-
-    return { imageUrl, isListening, setIsListening };
+    return { transcribedText, isListening, setIsListening };
 };
+
+export default useVoiceToText;

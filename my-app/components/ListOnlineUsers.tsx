@@ -12,12 +12,10 @@ const ListOnlineUsers = () => {
     <div className="flex gap-4 w-full items-center pb-2">
       {onlineUsers && onlineUsers.map(onlineUser => {
         if (onlineUser.profile.id === user?.id) return null
-          return <div className="flex flex-col items-center w-[200px] h-[100px] border-2 border-slate-400 mt-4 gap-1 rounded-lg">
-                    <div key={onlineUser.profile.id}  className="flex flex-col items-center mt-4 cursor-pointer" onClick={() => handleCall(onlineUser)}>
-                          <Avatar src={onlineUser.profile.imageUrl} />
-                          <div className="text-sm">{onlineUser.profile.fullName}</div>
-                    </div>
-                </div>
+        return <div key={onlineUser.profile.id} className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => handleCall(onlineUser)}>
+          <Avatar src={onlineUser.profile.imageUrl} />
+          <div className="text-sm">{onlineUser.profile.fullName?.split(' ')[0]}</div>
+        </div>
       })}
     </div>
   );

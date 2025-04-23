@@ -5,5 +5,5 @@ const onCall = async (participants) => {
     io.to(participants.receiver.socketId).emit("incomingCall", participants);
   }
 };
-
+[]
 export default onCall;
