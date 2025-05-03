@@ -191,18 +191,16 @@ const VideoCall = () => {
                             onClick={togglePredictionDisplay}
                         >
                             {showPrediction ? 'Hide SLT Model' : 'Use SLT Model'}
+                        </button>                
+                        <button
+                            onClick={() => {
+                                setIsListening(!isListening);
+                                console.log('Listening toggled:', !isListening);
+                            }}
+                            className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            {isListening ? 'Stop Listening' : 'Say a Word'}
                         </button>
-                        {isOnCall && (
-                            <button
-                                onClick={() => {
-                                    setIsListening(!isListening);
-                                    console.log('Listening toggled:', !isListening);
-                                }}
-                                className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                            >
-                                {isListening ? 'Stop Listening' : 'Say a Word'}
-                            </button>
-                        )}
                         <button
                             onClick={toggleModal}
                             className="ml-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -245,12 +243,7 @@ const VideoCall = () => {
                             <li>Click "End Call" to terminate the call.</li>
                             <li>Use the "SLT Model" button to enable/disable predictions.</li>
                             <li>Type in the chat box and press Enter to send messages.</li>
-                            <li>
-                                Use the "Say a Word" button to start/stop voice-to-text transcription.
-                                <ul className="list-circle list-inside ml-4">
-                                    <li>Turn off the microphone audio before using voice-to-text.</li>
-                                </ul>
-                            </li>
+                            <li> Use the "Say a Word" button to start/stop voice-to-text transcription.</li>
                         </ul>
                         <button
                             onClick={toggleModal}
