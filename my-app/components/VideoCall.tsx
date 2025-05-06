@@ -49,6 +49,7 @@ const VideoCall = () => {
     const [showPrediction, setShowPrediction] = useState<boolean>(false);
     const [messageInput, setMessageInput] = useState<string>("");
     const isOnCall: boolean = localStream && peer && ongoingCall ? true : false;
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
     // Integrate voice-to-text hook
     const { transcribedText, isListening, setIsListening } = useVoiceToText(localStream, isOnCall, isMicOn);
@@ -145,6 +146,10 @@ const VideoCall = () => {
         }
     };
 
+    const toggleModal = () => {
+        setIsModalOpen(!isModalOpen);
+    };
+
     return (
         <>
             <div className="mt-8 flex flex-row justify-between">
@@ -186,18 +191,22 @@ const VideoCall = () => {
                             onClick={togglePredictionDisplay}
                         >
                             {showPrediction ? 'Hide SLT Model' : 'Use SLT Model'}
+                        </button>                
+                        <button
+                            onClick={() => {
+                                setIsListening(!isListening);
+                                console.log('Listening toggled:', !isListening);
+                            }}
+                            className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            {isListening ? 'Stop Listening' : 'Say a Word'}
                         </button>
-                        {isOnCall && (
-                            <button
-                                onClick={() => {
-                                    setIsListening(!isListening);
-                                    console.log('Listening toggled:', !isListening);
-                                }}
-                                className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                            >
-                                {isListening ? 'Stop Listening' : 'Say a Word'}
-                            </button>
-                        )}
+                        <button
+                            onClick={toggleModal}
+                            className="ml-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        >
+                            Instructions
+                        </button>
                     </div>
 
                     {/* Display transcribed text */}
@@ -219,6 +228,32 @@ const VideoCall = () => {
                     ongoingCall={ongoingCall}
                 />
             </div>
+
+            {/* Modal for Instructions */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                        <h2 className="text-2xl font-bold mb-4">Instructions</h2>
+                        <p className="text-gray-700 mb-4">
+                            Welcome to the Signlanguage Translator! Here are some instructions:
+                        </p>
+                        <ul className="list-disc list-inside text-gray-700 mb-4">
+                            <li>Use the microphone button to toggle audio.</li>
+                            <li>Use the camera button to toggle video.</li>
+                            <li>Click "End Call" to terminate the call.</li>
+                            <li>Use the "SLT Model" button to enable/disable predictions.</li>
+                            <li>Type in the chat box and press Enter to send messages.</li>
+                            <li> Use the "Say a Word" button to start/stop voice-to-text transcription.</li>
+                        </ul>
+                        <button
+                            onClick={toggleModal}
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
