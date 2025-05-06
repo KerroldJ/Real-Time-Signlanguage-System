@@ -37,7 +37,6 @@ A Realtime Sign Language Translation System that enables two-way communication b
 - .env\Scripts\activate
 - after you successfully activated the Virtual Environment, Procceed to the backend and Frontend Setup
 
-
 ###  Backend Setup (Flask)
 - cd backend
 - pip install flask flask-cors tensorflow numpy scikit-learn
